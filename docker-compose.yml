@@ -1,0 +1,12 @@
+name: enterprise-survey-ai
+
+networks:
+  backend-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  kafka-data:
+  qdrant-data:
+  minio-data:
