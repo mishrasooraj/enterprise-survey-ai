@@ -64,3 +64,36 @@ services:
     networks:
 
       - backend-network
+  
+
+
+  redis:
+    image: redis:7.4-alpine
+
+    container_name: redis
+
+    hostname: redis
+
+    restart: unless-stopped
+
+    ports:
+      - "${REDIS_PORT}:6379"
+
+    command:
+      - redis-server
+      - /usr/local/etc/redis/redis.conf
+
+    volumes:
+      - redis-data:/data
+      - ./infrastructure/redis/redis.conf:/usr/local/etc/redis/redis.conf
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - backend-network
+
+  
