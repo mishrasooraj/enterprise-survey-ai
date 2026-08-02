@@ -10,3 +10,4 @@ volumes:
   kafka-data:
   qdrant-data:
   minio-data:
+  ollama-data:
