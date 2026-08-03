@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from app.lifespan import lifespan   
+
+from app.api.router import api_router
 
 
 app = FastAPI(
@@ -8,4 +11,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    lifespan=lifespan,
 )
+
+app.include_router(api_router)
