@@ -23,7 +23,7 @@ class DatabaseConfig(BaseModel):
     db: str
     user: str
     password: str
-    schema: str
+    database_schema: str
     url: str
 
 
@@ -95,7 +95,7 @@ class Settings(BaseSettings):
             db=self.postgres_db,
             user=self.postgres_user,
             password=self.postgres_password,
-            schema=self.database_schema,
+            database_schema=self.database_schema,
             url=self.database_url,
         )
 
