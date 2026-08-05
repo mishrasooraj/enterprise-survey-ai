@@ -13,6 +13,7 @@ dependencies = [
     "sqlalchemy>=2.0.51",
     "asyncpg>=0.31.0",
     "psycopg[binary]>=3.3.4",
+    "alembic>=1.19.0",
 ]
 
 [dependency-groups]
