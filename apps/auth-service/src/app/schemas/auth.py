@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from app.schemas.user import UserResponse
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
@@ -45,4 +46,13 @@ class TokenPayload(BaseModel):
 
     sub: UUID
     email: EmailStr
-    
+
+
+
+class LoginResponse(BaseModel):
+    """
+    Response returned after successful authentication.
+    """
+
+    message: str
+    user: UserResponse

@@ -1,0 +1,46 @@
+services:
+  auth-service:
+    build:
+      context: ./apps/auth-service
+    container_name: auth-service
+
+    working_dir: /app
+
+    volumes:
+      - ./apps/auth-service:/app
+
+    env_file:
+      - ../../config/.env
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - backend-network
+
+  postgres:
+    image: postgres:17
+    container_name: postgres
+
+    environment:
+      POSTGRES_DB: enterprise_survey_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+    ports:
+      - "5432:5432"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
