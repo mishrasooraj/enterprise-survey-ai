@@ -60,3 +60,12 @@ class User(BaseModel):
     organization: Mapped["Organization"] = relationship(
         back_populates="users",
     )
+
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("roles.id"),
+        nullable=False,
+    )       
+
+    role: Mapped["Role"] = relationship(
+        back_populates="users",
+    )

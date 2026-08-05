@@ -4,6 +4,9 @@ from sqlalchemy import Text
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
+from sqlalchemy.orm import relationship
+from app.db.models.role_permission import role_permissions
+
 from app.db.models.base import BaseModel
 
 
@@ -30,4 +33,10 @@ class Permission(BaseModel):
         Boolean,
         default=True,
         nullable=False,
+    )
+
+
+    roles: Mapped[list["Role"]] = relationship(
+        secondary=role_permissions,
+        back_populates="permissions",
     )
