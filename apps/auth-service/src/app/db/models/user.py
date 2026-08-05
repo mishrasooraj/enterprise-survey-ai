@@ -2,9 +2,11 @@ from datetime import datetime
 
 from sqlalchemy import Boolean
 from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
 
 from app.db.models.base import BaseModel
 
@@ -48,4 +50,13 @@ class User(BaseModel):
     last_login: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
+    )
+
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id"),
+        nullable=False,
+    )
+
+    organization: Mapped["Organization"] = relationship(
+        back_populates="users",
     )
