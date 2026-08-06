@@ -1,16 +1,16 @@
 services:
   auth-service:
     build:
-      context: ./apps/auth-service
+      context: .
     container_name: auth-service
 
     working_dir: /app
 
     volumes:
-      - ./apps/auth-service:/app
+      - .:/app
 
     env_file:
-      - ../../config/.env
+      - ../../.env
 
     ports:
       - "8000:8000"

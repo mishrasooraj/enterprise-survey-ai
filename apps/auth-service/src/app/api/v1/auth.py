@@ -1,18 +1,18 @@
 from fastapi import APIRouter
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from fastapi import HTTPException
 from fastapi import status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_db
+from app.repositories.organization import OrganizationRepository
+from app.repositories.role import RoleRepository
+from app.repositories.user import UserRepository
 from app.schemas.auth import (
     LoginResponse,
     UserLoginRequest,
     UserRegisterRequest,
 )
-from app.api.deps import get_db
-from app.repositories.user import UserRepository
-from app.schemas.auth import UserRegisterRequest
 from app.schemas.user import UserResponse
 from app.services.auth import AuthenticationService
 
@@ -37,24 +37,33 @@ async def health_check() -> dict[str, str]:
 @router.post(
     "/register",
     response_model=UserResponse,
-    status_code=201,
+    status_code=status.HTTP_201_CREATED,
 )
 async def register(
     request: UserRegisterRequest,
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
     """
-    Register a new user.
+    Register a new organization and its first admin user.
     """
 
-    repository = UserRepository(db)
+    service = AuthenticationService(
+        db=db,
+        user_repository=UserRepository(db),
+        organization_repository=OrganizationRepository(db),
+        role_repository=RoleRepository(db),
+    )
 
-    service = AuthenticationService(repository)
+    try:
+        user = await service.register(request)
 
-    user = await service.register(request)
+        return UserResponse.model_validate(user)
 
-    return UserResponse.model_validate(user)
-
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
 
 
 @router.post(
@@ -69,9 +78,12 @@ async def login(
     Authenticate a user.
     """
 
-    repository = UserRepository(db)
-
-    service = AuthenticationService(repository)
+    service = AuthenticationService(
+        db=db,
+        user_repository=UserRepository(db),
+        organization_repository=OrganizationRepository(db),
+        role_repository=RoleRepository(db),
+    )
 
     user = await service.authenticate(request)
 

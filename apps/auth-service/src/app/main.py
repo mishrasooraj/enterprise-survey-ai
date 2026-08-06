@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.lifespan import lifespan   
 
 from app.api.router import api_router
+from app.db import models  # noqa: F401
 
 
 app = FastAPI(

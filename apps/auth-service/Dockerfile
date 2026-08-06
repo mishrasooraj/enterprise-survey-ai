@@ -8,8 +8,8 @@ ENV PYTHONUNBUFFERED=1
 # Install uv
 RUN pip install uv
 
-# Copy dependency files first (better Docker caching)
-COPY pyproject.toml uv.lock* ./
+# Copy dependency metadata first (better Docker caching)
+COPY pyproject.toml uv.lock* README.md ./
 
 RUN uv sync
 

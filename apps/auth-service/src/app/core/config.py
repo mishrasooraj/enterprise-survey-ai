@@ -3,7 +3,11 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-BASE_DIR = Path(__file__).resolve().parents[5]
+_FILE_PATH = Path(__file__).resolve()
+BASE_DIR = next(
+    (parent for parent in _FILE_PATH.parents if (parent / ".env").exists()),
+    _FILE_PATH.parents[4],
+)
 
 
 # ======================================================

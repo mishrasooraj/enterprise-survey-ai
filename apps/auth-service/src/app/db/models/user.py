@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from datetime import datetime
 
 from sqlalchemy import Boolean
@@ -52,7 +54,7 @@ class User(BaseModel):
         nullable=True,
     )
 
-    organization_id: Mapped[int] = mapped_column(
+    organization_id: Mapped[UUID] = mapped_column(
         ForeignKey("organizations.id"),
         nullable=False,
     )
@@ -61,10 +63,10 @@ class User(BaseModel):
         back_populates="users",
     )
 
-    role_id: Mapped[int] = mapped_column(
+    role_id: Mapped[UUID] = mapped_column(
         ForeignKey("roles.id"),
         nullable=False,
-    )       
+    )
 
     role: Mapped["Role"] = relationship(
         back_populates="users",

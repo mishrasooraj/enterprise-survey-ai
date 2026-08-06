@@ -38,7 +38,10 @@ import app.db.models.user
 config = context.config
 
 database_url = make_url(settings.database.url)
-database_url = database_url.set(host="localhost")
+# The line below incorrectly overrides the database host to 'localhost',
+# which fails inside a Docker container. It's commented out to allow
+# the correct host ('postgres') from the .env file to be used.
+# database_url = database_url.set(host="localhost")
 
 config.set_main_option(
     "sqlalchemy.url",

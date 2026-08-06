@@ -35,3 +35,7 @@ class Organization(BaseModel):
     users: Mapped[list["User"]] = relationship(
         back_populates="organization",
     )
+
+    roles: Mapped[list["Role"]] = relationship(
+        back_populates="organization",
+    )
