@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
-from app.db.models.base import BaseModel
+from app.db.models.model_base import BaseModel
 
 
 class Organization(BaseModel):
@@ -34,8 +34,10 @@ class Organization(BaseModel):
 
     users: Mapped[list["User"]] = relationship(
         back_populates="organization",
+        lazy="selectin",
     )
 
     roles: Mapped[list["Role"]] = relationship(
         back_populates="organization",
+        lazy="selectin",
     )

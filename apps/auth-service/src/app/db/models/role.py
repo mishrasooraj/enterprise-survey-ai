@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
-from app.db.models.base import BaseModel
+from app.db.models.model_base import BaseModel
 from app.db.models.role_permission import role_permissions
 
 
@@ -51,4 +51,5 @@ class Role(BaseModel):
     permissions: Mapped[list["Permission"]] = relationship(
         secondary=role_permissions,
         back_populates="roles",
+        lazy="selectin",
     )

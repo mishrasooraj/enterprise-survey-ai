@@ -1,0 +1,182 @@
+name: Enterprise Survey AI CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  UV_CACHE_DIR: /tmp/uv-cache
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  quality:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - apps/auth-service
+          - apps/survey-service
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync dependencies
+        run: uv sync --project ${{ matrix.service }}
+
+      - name: Lint
+        run: uv run --project ${{ matrix.service }} ruff check .
+
+      - name: Type check
+        run: |
+          if [ -f config/mypy.ini ]; then
+            uv run --project ${{ matrix.service }} mypy --config-file ../../config/mypy.ini src/app
+          fi
+
+      - name: Unit tests
+        run: uv run --project ${{ matrix.service }} pytest -q
+
+      - name: SonarQube analysis auth-service
+        if: matrix.service == 'apps/auth-service' && github.event_name != 'pull_request' && secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != ''
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        uses: sonarsource/sonarqube-scan-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=enterprise-survey-ai-auth-service
+            -Dsonar.sources=src/app
+            -Dsonar.tests=tests
+            -Dsonar.python.version=3.12
+
+      - name: SonarQube analysis survey-service
+        if: matrix.service == 'apps/survey-service' && github.event_name != 'pull_request' && secrets.SONAR_TOKEN != '' && secrets.SONAR_HOST_URL != ''
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        uses: sonarsource/sonarqube-scan-action@v2
+        with:
+          args: >
+            -Dsonar.projectKey=enterprise-survey-ai-survey-service
+            -Dsonar.sources=src/app
+            -Dsonar.tests=tests
+            -Dsonar.python.version=3.12
+
+      - name: Dependency vulnerability scan
+        run: uv run --project ${{ matrix.service }} pip-audit
+
+  security:
+    name: Secret and Container Scans
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build auth-service image
+        run: docker build -t enterprise-survey-ai-auth-service:ci -f apps/auth-service/Dockerfile apps/auth-service
+
+      - name: Build survey-service image
+        run: docker build -t enterprise-survey-ai-survey-service:ci -f apps/survey-service/Dockerfile apps/survey-service
+
+      - name: Trivy scan auth-service
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: enterprise-survey-ai-auth-service:ci
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Trivy scan survey-service
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: enterprise-survey-ai-survey-service:ci
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+  build-and-push:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    needs: security
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.CONTAINER_REGISTRY }}
+          username: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.CONTAINER_REGISTRY_PASSWORD }}
+
+      - name: Build and push auth-service
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/auth-service
+          file: apps/auth-service/Dockerfile
+          push: true
+          tags: ${{ secrets.CONTAINER_REGISTRY }}/enterprise-survey-ai/auth-service:${{ github.sha }}
+
+      - name: Build and push survey-service
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/survey-service
+          file: apps/survey-service/Dockerfile
+          push: true
+          tags: ${{ secrets.CONTAINER_REGISTRY }}/enterprise-survey-ai/survey-service:${{ github.sha }}
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        if: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        if: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+        run: |
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "
+            cd '${{ secrets.DEPLOY_PATH }}' &&
+            export AUTH_SERVICE_IMAGE='${{ secrets.CONTAINER_REGISTRY }}/enterprise-survey-ai/auth-service:${{ github.sha }}' &&
+            export SURVEY_SERVICE_IMAGE='${{ secrets.CONTAINER_REGISTRY }}/enterprise-survey-ai/survey-service:${{ github.sha }}' &&
+            docker compose -f docker-compose.yml -f docker-compose.infrastructure.yml -f docker-compose.application.yml pull &&
+            docker compose -f docker-compose.yml -f docker-compose.infrastructure.yml -f docker-compose.application.yml up -d
+          "

@@ -7,7 +7,7 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 from app.db.models.role_permission import role_permissions
 
-from app.db.models.base import BaseModel
+from app.db.models.model_base import BaseModel
 
 
 class Permission(BaseModel):

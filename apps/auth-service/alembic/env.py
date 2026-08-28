@@ -21,8 +21,8 @@ sys.path.insert(0, str(SRC_DIR))
 # Application Imports
 # ======================================================
 
-from app.core.config import settings
-from app.db.base import Base
+from app.core.core_config import settings
+from app.db.db_base import Base
 
 # Import all models so SQLAlchemy registers them
 import app.db.models.organization

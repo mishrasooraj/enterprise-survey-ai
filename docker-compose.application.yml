@@ -1,0 +1,41 @@
+services:
+  auth-service:
+    build:
+      context: ./apps/auth-service
+    container_name: auth-service
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${AUTH_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/enterprise_survey_ai}
+      JWT_SECRET_KEY: ${AUTH_JWT_SECRET_KEY:-change-me}
+      JWT_REFRESH_SECRET_KEY: ${AUTH_JWT_REFRESH_SECRET_KEY:-change-me}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend-network
+
+  survey-service:
+    build:
+      context: ./apps/survey-service
+    container_name: survey-service
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${SURVEY_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/enterprise_survey_ai}
+      JWT_SECRET_KEY: ${SURVEY_JWT_SECRET_KEY:-change-me}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    networks:
+      - backend-network

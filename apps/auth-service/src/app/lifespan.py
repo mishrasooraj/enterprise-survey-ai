@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.core.config import settings
-from app.core.logging import configure_logging, logger
+from app.core.core_config import settings
+from app.core.core_logging import configure_logging, logger
 
 
 @asynccontextmanager

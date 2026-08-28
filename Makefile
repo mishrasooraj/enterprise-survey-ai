@@ -1,7 +1,8 @@
 up:
 	docker compose \
 	-f docker-compose.yml \
-	-f docker-compose.infrastructure.yml up -d
+	-f docker-compose.infrastructure.yml \
+	-f docker-compose.application.yml up -d
 
 down:
 	docker compose down

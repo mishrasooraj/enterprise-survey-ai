@@ -1,4 +1,4 @@
-from app.core.logging import configure_logging, logger
+from app.core.core_logging import configure_logging, logger
 
 configure_logging()
 

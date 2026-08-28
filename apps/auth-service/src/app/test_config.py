@@ -1,4 +1,4 @@
-from app.core.config import settings
+from app.core.core_config import settings
 
 print("Application")
 print(settings.app.name)

@@ -3,7 +3,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Table
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.db.base import Base
+from app.db.db_base import Base
 
 role_permissions = Table(
     "role_permissions",

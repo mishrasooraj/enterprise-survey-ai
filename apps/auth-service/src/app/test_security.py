@@ -1,23 +1,11 @@
-from app.core.security import (
-    hash_password,
-    verify_password,
-)
+from app.core.core_security import hash_password, verify_password
 
-password = "MyPassword123"
 
-hashed = hash_password(password)
+def test_password_hashing():
+    password = "MyPassword123"
 
-print(f"Original : {password}")
-print(f"Hash     : {hashed}")
+    hashed = hash_password(password)
 
-print()
-
-print(
-    "Correct Password:",
-    verify_password(password, hashed),
-)
-
-print(
-    "Wrong Password:",
-    verify_password("wrong", hashed),
-)
+    assert hashed != password
+    assert verify_password(password, hashed)
+    assert not verify_password("wrong", hashed)
